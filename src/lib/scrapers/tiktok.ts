@@ -1,11 +1,15 @@
 import type { ScrapedItem } from "./types";
 
 /**
- * TikTok scraping via Apify. Optional — if APIFY_TOKEN is not set, we return []
- * and the system continues with Reddit + web.
+ * TikTok scraping via Apify.
  *
- * Uses Apify's "apidojo/tiktok-scraper" actor (a popular, maintained option).
- * You can swap the actor slug to any TikTok actor you prefer.
+ * Uses novi/advanced-search-tiktok-api — the most popular TikTok search actor
+ * on Apify (millions of runs, actively maintained). The older
+ * apidojo/tiktok-scraper has been returning {noResults: true} on search
+ * queries in 2025.
+ *
+ * Optional — if APIFY_TOKEN is not set, returns [] and the pipeline
+ * continues with Reddit + web.
  */
 export async function scrapeTikTok(
   query: string,
@@ -14,46 +18,60 @@ export async function scrapeTikTok(
   const token = process.env.APIFY_TOKEN;
   if (!token) return [];
 
-  try {
-    const runRes = await fetch(
-      `https://api.apify.com/v2/acts/apidojo~tiktok-scraper/run-sync-get-dataset-items?token=${token}&timeout=60`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          searchQueries: [query],
-          resultsPerPage: limit,
-          shouldDownloadVideos: false,
-          shouldDownloadCovers: false,
-        }),
-        // Apify sync endpoint can take a while; bound it.
-        signal: AbortSignal.timeout(90_000),
-      },
-    );
-    if (!runRes.ok) return [];
-    const items = (await runRes.json()) as TikTokItem[];
-    return items
-      .filter((i) => typeof i.text === "string" && i.text.length > 20)
-      .slice(0, limit)
-      .map((i) => ({
-        kind: "tiktok" as const,
-        url: i.webVideoUrl ?? null,
-        title: i.authorMeta?.name ? `@${i.authorMeta.name}` : null,
-        excerpt: [i.text, ...(i.hashtags ?? []).map((h) => `#${h}`)]
-          .filter(Boolean)
-          .join(" "),
-        raw: { stats: i.playCount, diggCount: i.diggCount },
-      }));
-  } catch {
-    return [];
+  const res = await fetch(
+    `https://api.apify.com/v2/acts/novi~advanced-search-tiktok-api/run-sync-get-dataset-items?token=${token}&timeout=150`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        keywords: [query],
+        limit,
+        region: "US",
+      }),
+      signal: AbortSignal.timeout(160_000),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`Apify TikTok actor failed: ${res.status}`);
   }
+  const items = (await res.json()) as TikTokItem[];
+
+  return items
+    .filter((i) => !i.noResults)
+    .filter((i) => {
+      const caption = i.desc ?? i.text ?? "";
+      return caption.length >= 20;
+    })
+    .slice(0, limit)
+    .map((i) => {
+      const caption = i.desc ?? i.text ?? "";
+      const author = i.author?.unique_id ?? i.author?.nickname ?? null;
+      return {
+        kind: "tiktok" as const,
+        url: i.share_url ?? null,
+        title: author ? `@${author}` : null,
+        excerpt: caption,
+        raw: {
+          aweme_id: i.aweme_id,
+          digg_count: i.statistics?.digg_count,
+          play_count: i.statistics?.play_count,
+        },
+      };
+    });
 }
 
 type TikTokItem = {
+  noResults?: boolean;
+  desc?: string;
   text?: string;
-  webVideoUrl?: string;
-  authorMeta?: { name?: string };
-  hashtags?: string[];
-  playCount?: number;
-  diggCount?: number;
+  aweme_id?: string;
+  share_url?: string;
+  author?: {
+    unique_id?: string;
+    nickname?: string;
+  };
+  statistics?: {
+    digg_count?: number;
+    play_count?: number;
+  };
 };
