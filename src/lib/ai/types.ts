@@ -18,9 +18,9 @@ export interface GenerateArgs {
 }
 
 export interface RoutedResponse<T> {
-  provider: "openai" | "anthropic";
+  provider: "openai";
   model: string;
   value: T;
 }
 
-export type ProviderLogger = (provider: "openai" | "anthropic", model: string, action: string) => void;
+export type ProviderLogger = (provider: "openai", model: string, action: string) => void;

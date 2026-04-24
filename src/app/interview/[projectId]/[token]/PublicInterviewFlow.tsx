@@ -50,12 +50,12 @@ export function PublicInterviewFlow({
         </header>
         <div className="panel p-8">
           <p className="chip">Interview invitation</p>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight">{project.title}</h1>
-          {project.research_question && (
-            <p className="mt-2 text-[color:var(--color-fg-muted)]">
-              {project.research_question}
-            </p>
-          )}
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">
+            Short research interview
+          </h1>
+          <p className="mt-2 text-[color:var(--color-fg-muted)]">
+            We're exploring how people make purchasing decisions around this category.
+          </p>
           <section className="mt-6 space-y-3 text-sm text-[color:var(--color-fg-muted)]">
             <p>
               You've been invited to a short conversational interview. There are no right

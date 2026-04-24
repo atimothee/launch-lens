@@ -94,7 +94,7 @@ export async function POST(
           return;
         }
 
-        send({ type: "stage", stage: "extract", message: `synthesizing ${collected.length} items` });
+        send({ type: "stage", stage: "extract", message: `synthesizing ${collected.length} items with OpenAI` });
 
         // Bounded context: top ~40 items.
         const trimmed = collected.slice(0, 40);

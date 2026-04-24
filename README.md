@@ -8,7 +8,7 @@ into structured insights, runs probing AI customer interviews, and synthesizes
 campaign-ready positioning and messaging.
 
 Stack: **Next.js 15 (App Router)** · **Tailwind 4** · **Supabase** (auth + Postgres + RLS) ·
-**Claude API** · Vercel. No LangChain, no vector DB, no Docker.
+**OpenAI API** · Vercel. No LangChain, no vector DB, no Docker.
 
 ---
 
@@ -17,7 +17,7 @@ Stack: **Next.js 15 (App Router)** · **Tailwind 4** · **Supabase** (auth + Pos
 Three agents, each replacing a slow piece of the research stack:
 
 1. **Insight Engine** — scrapes Reddit, TikTok (via Apify), and the open web;
-   Claude clusters raw voice into four structured insight types with verbatim
+   OpenAI clusters raw voice into four structured insight types with verbatim
    quotes:
    - `belief` — what people think is true
    - `goal` — what they actually want
@@ -70,7 +70,7 @@ launch-lens/
 │   │   ├── ProjectTabs.tsx
 │   │   ├── Nav.tsx, Logo.tsx
 │   ├── lib/
-│   │   ├── claude.ts                     — Anthropic SDK + claudeJSON + streamText
+│   │   ├── ai/                           — OpenAI SDK + JSON / streaming helpers
 │   │   ├── prompts.ts                    — all agent prompts
 │   │   ├── scrapers/
 │   │   │   ├── index.ts                  — parallel runner w/ progress events
@@ -112,7 +112,7 @@ Fill in `.env.local`:
 | `NEXT_PUBLIC_SUPABASE_URL` | from your Supabase project |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | from your Supabase project |
 | `SUPABASE_SERVICE_ROLE_KEY` | from your Supabase project (server only) |
-| `ANTHROPIC_API_KEY` | from https://console.anthropic.com |
+| `OPENAI_API_KEY` | from https://platform.openai.com/api-keys |
 | `APIFY_TOKEN` | optional — enables TikTok scraping |
 | `REDDIT_USER_AGENT` | optional — override UA used on Reddit's public JSON |
 
@@ -181,16 +181,16 @@ See [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql).
 
 ---
 
-## How the agents talk to Claude
+## How the agents talk to OpenAI
 
 All prompts live in [src/lib/prompts.ts](src/lib/prompts.ts) and return
-strict JSON (parsed defensively by `claudeJSON` in
-[src/lib/claude.ts](src/lib/claude.ts)).
+strict JSON (parsed defensively by the helpers in
+[src/lib/ai](src/lib/ai)).
 
-Models used:
+Models used (defaults, overridable via env):
 
-- **Insight extraction**, **interview turns**, **interview summaries** — `claude-sonnet-4-6`.
-- **Final report synthesis** — `claude-opus-4-7` (bolder reframes).
+- **Insight extraction**, **interview turns**, **interview summaries** — `gpt-4.1-mini`.
+- **Final report synthesis** — `gpt-4.1`.
 
 Prompt design principles baked in:
 
@@ -214,7 +214,7 @@ per line:
 ```
 {"type":"started","source":"reddit"}
 {"type":"source_done","source":"reddit","count":34}
-{"type":"stage","stage":"extract","message":"synthesizing 34 items with Claude"}
+{"type":"stage","stage":"extract","message":"synthesizing 34 items with OpenAI"}
 {"type":"insights_ready","count":9}
 {"type":"done"}
 ```

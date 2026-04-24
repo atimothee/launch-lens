@@ -35,6 +35,7 @@ export async function POST(
 
   const system = INTERVIEWER_SYSTEM({
     title: ctx.project.title,
+    description: ctx.project.description,
     audience: ctx.project.target_audience ?? "",
     question: ctx.project.research_question ?? "",
     persona: "",

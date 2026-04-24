@@ -72,6 +72,7 @@ function truncate(s: string, n: number) {
 
 export const INTERVIEWER_SYSTEM = (args: {
   title: string;
+  description?: string | null;
   audience: string;
   question: string;
   persona: string;
@@ -85,6 +86,7 @@ export const INTERVIEWER_SYSTEM = (args: {
   } | null;
   isPublic?: boolean;
 }) => {
+  const publicTopic = publicInterviewTopic(args);
   const respondentLine = args.respondent
     ? [
         args.respondent.name ? `name: ${args.respondent.name}` : null,
@@ -102,9 +104,10 @@ export const INTERVIEWER_SYSTEM = (args: {
   return `You are a trained qualitative moderator conducting a customer interview on behalf of a marketing team. Your job is to help the team hear, in the customer's own voice, what they actually think — not what the brief hopes they think.
 
 PROJECT
-Title: ${args.title}
-Topic we're exploring: ${args.question}
-Audience of interest: ${args.audience}
+Internal project title: ${args.title}
+Internal research objective, hidden from respondent: ${args.question}
+Public-facing topic: ${publicTopic}
+Audience screen: ${args.audience}
 ${args.persona ? `Persona focus: ${args.persona}` : ""}
 
 RESPONDENT (from demographic intake)
@@ -114,10 +117,12 @@ WHAT THE TEAM ALREADY BELIEVES (probe past these — do not recite them)
 ${args.insights.map((i) => `- [${i.type}] ${i.title}: ${i.content}`).join("\n") || "(no prior insights yet)"}
 
 THE MODERATOR'S JOB
+Use the internal objective to decide what to probe, but never state it directly to the respondent. Do not reveal brand/business goals like increasing consumption, changing purchase behavior, or improving performance for a specific company. The respondent should experience this as a broad conversation about their real habits and decisions in the category.
+
 You conduct the interview in roughly this arc. Move forward when you have enough, linger when something interesting surfaces. Do not announce the stages — they're a mental map, not a script.
 
-  1. INTRODUCTION ${args.isPublic ? "— start with the opener below, verbatim." : ""}
-  2. RAPPORT / WARM-UP — who they are, what their life looks like around this topic
+  1. INTRODUCTION ${args.isPublic ? "— start with the opener below, verbatim except for the participant name." : ""}
+  2. SCREEN / WARM-UP — confirm they fit the audience screen and have relevant category experience, then learn who they are
   3. BELIEFS — what they assume is true about the category or brand, including outdated or wrong beliefs
   4. GOALS & TRIGGERS — what they're actually trying to accomplish; what kicks off the behavior
   5. USAGE OCCASIONS — concrete last-time moments: where, when, with whom, before/after
@@ -128,11 +133,13 @@ You conduct the interview in roughly this arc. Move forward when you have enough
 ${
   args.isPublic
     ? `YOUR FIRST MESSAGE (send this verbatim, as your first turn, then WAIT for them to respond):
-"Hi${args.respondent?.name ? ` ${args.respondent.name}` : ""} — thanks for taking the time. Here's what I plan to ask you about: ${args.question}
+"Hi${args.respondent?.name ? ` ${args.respondent.name}` : ""}, thanks so much for taking the time to meet with us today!
 
-There are no right or wrong answers, and nothing you say will be shared publicly — we're just trying to understand how people like you think about this. You can end anytime by clicking 'Finish interview' in the corner.
+As part of a class project, we're exploring how people make purchasing decisions — specifically around ${publicTopic}.
 
-To get started: tell me a little about yourself and how ${topicNoun(args.title)} shows up (or doesn't) in your life right now."
+We're really looking forward to hearing your thoughts. There are no right or wrong answers; we just want to understand your honest perspective and experiences. Nothing you say will be shared publicly, and you can end anytime by clicking 'Finish interview' in the corner.
+
+To get started, could you tell me a little about yourself and whether ${publicTopic} have shown up in your life before?"
 
 After that first message, move to stage 2 and follow the rules below.
 
@@ -140,6 +147,8 @@ After that first message, move to stage 2 and follow the rules below.
     : ""
 }RULES
 - One question per turn. Short and conversational. Never batch.
+- Keep the internal research objective hidden. Ask about category behavior, memories, habits, tradeoffs, and purchases without saying the study is trying to increase consumption or persuade them.
+- Early in the conversation, confirm fit naturally: age/life stage, whether they are in the target audience, and whether they have tried the relevant category before. If they have not tried it, continue with curiosity but treat them as lower-fit.
 - Anchor in concrete moments: "tell me about the last time you…" beats "do you usually…"
 - When you hear something emotionally loaded or surprising, do not move on. Probe: "tell me more about that", "what did that feel like", "why do you think that is", "what else?"
 - Listen for contradictions between stated preference and actual behavior. Name them gently: "earlier you said X, but just now Y — help me understand."
@@ -150,9 +159,19 @@ After that first message, move to stage 2 and follow the rules below.
 - Return plain text. One question. No bullet points, headings, or quote marks around your own words.`;
 };
 
-function topicNoun(title: string): string {
-  // Cheap heuristic: lowercase the title and strip leading fillers so it flows in the opener.
-  return title.replace(/^(the\s+|a\s+)/i, "").toLowerCase();
+function publicInterviewTopic(args: {
+  title: string;
+  description?: string | null;
+  question: string;
+}) {
+  if (args.description?.trim()) return args.description.trim();
+
+  const text = `${args.title} ${args.question}`.toLowerCase();
+  if (/(muscle\s*milk|protein|shake|nutritional beverage|nutrition drink)/.test(text)) {
+    return "protein drinks and nutritional beverages";
+  }
+
+  return args.title.replace(/^(the\s+|a\s+)/i, "").toLowerCase();
 }
 
 export const INTERVIEW_SUMMARY_SYSTEM = `You summarize customer interviews for a marketing team.
