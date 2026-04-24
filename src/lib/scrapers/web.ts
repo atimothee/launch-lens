@@ -1,16 +1,53 @@
 import type { ScrapedItem } from "./types";
 
 /**
- * Minimal "crawl4ai-lite": fetch a handful of URLs from a DuckDuckGo HTML search,
- * then fetch each page and extract readable text. No deps.
+ * Web voice-of-customer scraper.
  *
- * This is intentionally simple — blog discovery is a "nice to have" source.
- * If DDG's HTML layout changes, we degrade gracefully (return []).
+ * Two backends:
+ *   1. Tavily (https://tavily.com) — used when TAVILY_API_KEY is set.
+ *      Purpose-built for LLM research: returns article content pre-chunked,
+ *      works from any IP, 1k req/mo free.
+ *   2. DuckDuckGo HTML + readable text — free fallback. Works locally but
+ *      flaky from datacenter IPs (Vercel etc.) as DDG rate-limits those.
  */
 export async function scrapeWeb(
   query: string,
   { limit = 5 }: { limit?: number } = {},
 ): Promise<ScrapedItem[]> {
+  if (process.env.TAVILY_API_KEY) {
+    return scrapeWebViaTavily(query, limit);
+  }
+  return scrapeWebViaDDG(query, limit);
+}
+
+async function scrapeWebViaTavily(query: string, limit: number): Promise<ScrapedItem[]> {
+  const key = process.env.TAVILY_API_KEY!;
+  const res = await fetch("https://api.tavily.com/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      api_key: key,
+      query,
+      search_depth: "basic",
+      max_results: limit,
+      include_raw_content: false,
+    }),
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) return [];
+  const json = (await res.json()) as TavilyResponse;
+  return (json.results ?? [])
+    .filter((r) => r.content && r.content.length > 80)
+    .slice(0, limit)
+    .map((r) => ({
+      kind: "web" as const,
+      url: r.url,
+      title: r.title,
+      excerpt: r.content,
+    }));
+}
+
+async function scrapeWebViaDDG(query: string, limit: number): Promise<ScrapedItem[]> {
   const urls = await ddgSearch(query, limit);
   const results = await Promise.all(urls.map((u) => fetchReadable(u).catch(() => null)));
   return results.filter((x): x is ScrapedItem => x !== null);
@@ -36,7 +73,6 @@ async function ddgSearch(query: string, limit: number): Promise<string[]> {
     const urls: string[] = [];
     for (const m of matches) {
       const raw = m[1];
-      // DDG wraps results through /l/?uddg=<urlencoded>
       const u = new URL(raw, "https://duckduckgo.com");
       const uddg = u.searchParams.get("uddg");
       const target = uddg ? decodeURIComponent(uddg) : raw;
@@ -73,7 +109,6 @@ async function fetchReadable(url: string): Promise<ScrapedItem | null> {
 }
 
 function stripHTML(html: string): string {
-  // Drop scripts/styles first, then tags, then decode a handful of entities.
   const cleaned = html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
@@ -91,3 +126,11 @@ function stripHTML(html: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+type TavilyResponse = {
+  results?: Array<{
+    title: string;
+    url: string;
+    content: string;
+  }>;
+};
