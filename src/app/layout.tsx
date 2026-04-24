@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LaunchLens — Turn customer noise into insight",
+  title: "LaunchLens — Customer conversations + signals, into sharper positioning",
   description:
-    "AI-powered research workflow for marketing teams. Go from vague idea to validated insight in minutes.",
+    "LaunchLens helps teams turn customer conversations and online signals into sharper positioning, messaging, and growth opportunities.",
   openGraph: {
     title: "LaunchLens",
-    description: "Turn customer noise into insight.",
-    url: "https://launchlens.app",
+    description:
+      "Turn customer conversations and online signals into sharper positioning and messaging.",
   },
 };
 

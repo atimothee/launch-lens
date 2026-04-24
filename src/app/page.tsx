@@ -26,7 +26,7 @@ export default function Landing() {
           </span>
         </div>
         <h1 className="mt-6 text-5xl md:text-7xl font-semibold tracking-[-0.03em] leading-[1.05]">
-          Turn customer noise
+          Customer conversations
           <br />
           <span className="text-[color:var(--color-fg-muted)]">into</span>{" "}
           <span
@@ -37,15 +37,14 @@ export default function Landing() {
               color: "transparent",
             }}
           >
-            insight
+            sharper positioning
           </span>
           .
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-[color:var(--color-fg-muted)] leading-relaxed">
-          LaunchLens is the research workflow for marketing teams. Point it at an
-          audience, ask a real question, and watch structured beliefs, goals,
-          contexts, and market patterns assemble themselves — with real quotes
-          attached.
+          LaunchLens helps teams turn customer conversations and online signals into
+          sharper positioning, messaging, and growth opportunities. Run AI-moderated
+          interviews, synthesize online voice, and ship campaign-ready strategy.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link href="/signup" className="btn btn-primary">
@@ -64,7 +63,7 @@ export default function Landing() {
           />
           <Feature
             title="AI Customer Interviews"
-            body="Dynamic, probing interviews grounded in the insights you already have. Listens for emotional drivers and contradictions."
+            body="Share a link and collect real interviews on your own audience. A research-backed moderator probes beliefs, goals, occasions, and concept reactions — text or voice."
             tag="Agent 2"
           />
           <Feature

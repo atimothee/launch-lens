@@ -39,6 +39,11 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
   const isProtected =
     pathname.startsWith("/dashboard") || pathname.startsWith("/projects");
+  // Public interview flow + its APIs bypass auth entirely — token gates access.
+  const isPublic =
+    pathname.startsWith("/interview/") || pathname.startsWith("/api/public/");
+
+  if (isPublic) return response;
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
