@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ReportView } from "./ReportView";
-import type { MessagingAngle, PositioningAngle } from "@/lib/types";
+import type {
+  MessagingAngle,
+  PositioningAngle,
+  ResearchFinding,
+  StrategicOpportunity,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +51,9 @@ export default async function ReportTab({
               summary: report.summary ?? null,
               positioning: (report.positioning ?? null) as PositioningAngle[] | null,
               messaging: (report.messaging ?? null) as MessagingAngle[] | null,
+              secondary_findings: (report.secondary_findings ?? null) as ResearchFinding[] | null,
+              primary_findings: (report.primary_findings ?? null) as ResearchFinding[] | null,
+              strategic_opportunities: (report.strategic_opportunities ?? null) as StrategicOpportunity[] | null,
               created_at: report.created_at,
             }
           : null

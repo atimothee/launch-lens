@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runResearch, type ScrapedItem } from "@/lib/scrapers";
-import { claudeJSON } from "@/lib/claude";
+import { generateJSON } from "@/lib/ai/model-router";
 import { INSIGHT_EXTRACTOR_SYSTEM, INSIGHT_EXTRACTOR_USER } from "@/lib/prompts";
 
 export const runtime = "nodejs";
@@ -94,11 +94,11 @@ export async function POST(
           return;
         }
 
-        send({ type: "stage", stage: "extract", message: `synthesizing ${collected.length} items with Claude` });
+        send({ type: "stage", stage: "extract", message: `synthesizing ${collected.length} items` });
 
-        // Claude wants a bounded context. Take the top ~40 items.
+        // Bounded context: top ~40 items.
         const trimmed = collected.slice(0, 40);
-        const extracted = await claudeJSON<{ insights: ExtractedInsight[] }>({
+        const { value: extracted, provider } = await generateJSON<{ insights: ExtractedInsight[] }>({
           system: INSIGHT_EXTRACTOR_SYSTEM,
           user: INSIGHT_EXTRACTOR_USER({
             title: project.title,
@@ -112,7 +112,9 @@ export async function POST(
             })),
           }),
           maxTokens: 6000,
+          tier: "workhorse",
         });
+        send({ type: "stage", stage: "extract", message: `extracted via ${provider}` });
 
         // Wipe prior insights for a clean re-run and re-insert.
         await supabase.from("insights").delete().eq("project_id", id);

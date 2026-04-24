@@ -2,7 +2,22 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { MessagingAngle, PositioningAngle } from "@/lib/types";
+import type {
+  MessagingAngle,
+  PositioningAngle,
+  ResearchFinding,
+  StrategicOpportunity,
+} from "@/lib/types";
+
+export interface ReportPayload {
+  summary: string | null;
+  positioning: PositioningAngle[] | null;
+  messaging: MessagingAngle[] | null;
+  secondary_findings: ResearchFinding[] | null;
+  primary_findings: ResearchFinding[] | null;
+  strategic_opportunities: StrategicOpportunity[] | null;
+  created_at: string;
+}
 
 export function ReportView({
   projectId,
@@ -12,12 +27,7 @@ export function ReportView({
 }: {
   projectId: string;
   project: { title: string; audience: string | null; question: string | null };
-  report: {
-    summary: string | null;
-    positioning: PositioningAngle[] | null;
-    messaging: MessagingAngle[] | null;
-    created_at: string;
-  } | null;
+  report: ReportPayload | null;
   insightCount: number;
 }) {
   const router = useRouter();
@@ -78,9 +88,7 @@ export function ReportView({
         </div>
       </div>
 
-      {error && (
-        <div className="panel-soft p-3 text-sm text-red-400">{error}</div>
-      )}
+      {error && <div className="panel-soft p-3 text-sm text-red-400">{error}</div>}
 
       {report?.summary && (
         <section className="panel p-6">
@@ -89,9 +97,43 @@ export function ReportView({
         </section>
       )}
 
+      {report?.secondary_findings && report.secondary_findings.length > 0 && (
+        <FindingsSection
+          label="Secondary research"
+          sublabel="From scraped customer voice — Reddit, web, TikTok."
+          items={report.secondary_findings}
+        />
+      )}
+
+      {report?.primary_findings && report.primary_findings.length > 0 && (
+        <FindingsSection
+          label="Primary research"
+          sublabel="From the interviews your team conducted."
+          items={report.primary_findings}
+          italicEvidence
+        />
+      )}
+
+      {report?.strategic_opportunities && report.strategic_opportunities.length > 0 && (
+        <section>
+          <h2 className="text-lg font-medium tracking-tight">Strategic opportunities</h2>
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            {report.strategic_opportunities.map((s, i) => (
+              <div key={i} className="panel p-5 fade-up">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium tracking-tight">{s.title}</h3>
+                  <PriorityPill priority={s.priority} />
+                </div>
+                <p className="mt-2 text-sm text-[color:var(--color-fg-muted)]">{s.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {report?.positioning && report.positioning.length > 0 && (
         <section>
-          <h2 className="text-lg font-medium tracking-tight">Positioning angles</h2>
+          <h2 className="text-lg font-medium tracking-tight">Positioning territories</h2>
           <div className="mt-3 grid gap-4 md:grid-cols-2">
             {report.positioning.map((p, i) => (
               <div key={i} className="panel p-5 fade-up">
@@ -131,22 +173,87 @@ export function ReportView({
   );
 }
 
+function FindingsSection({
+  label,
+  sublabel,
+  items,
+  italicEvidence,
+}: {
+  label: string;
+  sublabel: string;
+  items: ResearchFinding[];
+  italicEvidence?: boolean;
+}) {
+  return (
+    <section>
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-lg font-medium tracking-tight">{label}</h2>
+        <p className="text-xs text-[color:var(--color-fg-dim)]">{sublabel}</p>
+      </div>
+      <div className="mt-3 grid gap-4 md:grid-cols-2">
+        {items.map((f, i) => (
+          <div key={i} className="panel p-5 fade-up">
+            <h3 className="font-medium tracking-tight">{f.title}</h3>
+            <p className="mt-2 text-sm text-[color:var(--color-fg-muted)]">{f.detail}</p>
+            {f.evidence?.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {f.evidence.map((e, j) => (
+                  <li
+                    key={j}
+                    className={
+                      "border-l-2 pl-3 text-xs text-[color:var(--color-fg)] " +
+                      (italicEvidence ? "italic" : "")
+                    }
+                    style={{ borderColor: "var(--color-accent)" }}
+                  >
+                    {italicEvidence ? `"${e}"` : e}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PriorityPill({ priority }: { priority: "high" | "medium" | "low" }) {
+  const color =
+    priority === "high"
+      ? "var(--color-accent)"
+      : priority === "medium"
+        ? "var(--color-pattern)"
+        : "var(--color-fg-dim)";
+  return (
+    <span
+      className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full"
+      style={{ background: `color-mix(in oklab, ${color} 20%, transparent)`, color }}
+    >
+      {priority}
+    </span>
+  );
+}
+
 function toMarkdown(
   project: { title: string; audience: string | null; question: string | null },
-  report: {
-    summary: string | null;
-    positioning: PositioningAngle[] | null;
-    messaging: MessagingAngle[] | null;
-  } | null,
+  report: ReportPayload | null,
 ) {
   if (!report) return `# ${project.title}\n\n(No report generated.)\n`;
-  const lines: string[] = [];
-  lines.push(`# ${project.title}`);
+  const lines: string[] = [`# ${project.title}`];
   if (project.audience) lines.push(`\n**Audience:** ${project.audience}`);
   if (project.question) lines.push(`\n**Research question:** ${project.question}`);
   if (report.summary) lines.push(`\n## Executive summary\n\n${report.summary}`);
+  appendFindings(lines, "Secondary research", report.secondary_findings);
+  appendFindings(lines, "Primary research", report.primary_findings);
+  if (report.strategic_opportunities?.length) {
+    lines.push(`\n## Strategic opportunities`);
+    for (const s of report.strategic_opportunities) {
+      lines.push(`\n### ${s.title}  _(priority: ${s.priority})_\n${s.detail}`);
+    }
+  }
   if (report.positioning?.length) {
-    lines.push(`\n## Positioning angles`);
+    lines.push(`\n## Positioning territories`);
     for (const p of report.positioning) {
       lines.push(`\n### ${p.title}\n- **From:** ${p.from}\n- **To:** ${p.to}\n\n${p.rationale}`);
     }
@@ -158,6 +265,17 @@ function toMarkdown(
     }
   }
   return lines.join("\n");
+}
+
+function appendFindings(lines: string[], heading: string, items: ResearchFinding[] | null) {
+  if (!items?.length) return;
+  lines.push(`\n## ${heading}`);
+  for (const f of items) {
+    lines.push(`\n### ${f.title}\n${f.detail}`);
+    if (f.evidence?.length) {
+      for (const e of f.evidence) lines.push(`> ${e}`);
+    }
+  }
 }
 
 function slugify(s: string) {

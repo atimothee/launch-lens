@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { streamText } from "@/lib/claude";
+import { generateStream } from "@/lib/ai/model-router";
 import { INTERVIEWER_SYSTEM, INTERVIEW_OPENER_USER } from "@/lib/prompts";
 import type { InterviewMessage } from "@/lib/types";
 
@@ -96,10 +96,11 @@ export async function POST(
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of streamText({
+        for await (const chunk of generateStream({
           system,
           messages,
           maxTokens: 600,
+          tier: "workhorse",
         })) {
           accumulated += chunk;
           controller.enqueue(encoder.encode(chunk));
