@@ -1,10 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+/**
+ * Model IDs.
+ *
+ * Overridable via env so you can point the stack at a different model (or a
+ * compatible router like llm.kyle.pub which serves GLM models over the
+ * Anthropic-compatible protocol).
+ *
+ * Defaults map to GLM when running against the configured router. Set
+ * CLAUDE_MODEL_WORKHORSE / CLAUDE_MODEL_SYNTHESIS to override (e.g. to
+ * claude-sonnet-4-6 / claude-opus-4-7 if pointing at api.anthropic.com).
+ */
 export const MODELS = {
-  /** Fast, cost-efficient default for extraction, interview turns, and report drafts. */
-  workhorse: "claude-sonnet-4-6",
-  /** Higher reasoning for final synthesis / positioning passes. */
-  synthesis: "claude-opus-4-7",
+  workhorse: process.env.CLAUDE_MODEL_WORKHORSE || "glm-4.7",
+  synthesis: process.env.CLAUDE_MODEL_SYNTHESIS || "glm-5",
 } as const;
 
 let _client: Anthropic | null = null;
@@ -14,7 +23,12 @@ export function anthropic() {
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error("ANTHROPIC_API_KEY is not set");
     }
-    _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    _client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      ...(process.env.ANTHROPIC_BASE_URL
+        ? { baseURL: process.env.ANTHROPIC_BASE_URL }
+        : {}),
+    });
   }
   return _client;
 }
