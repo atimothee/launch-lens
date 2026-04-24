@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { InterviewChat } from "@/components/InterviewChat";
-import type { Interview } from "@/lib/types";
+import { ShareLinkManager } from "@/components/ShareLinkManager";
+import { InterviewsList } from "@/components/InterviewsList";
+import type { Interview, InterviewRespondent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,35 +25,32 @@ export default async function InterviewsTab({
     .from("interviews")
     .select("*")
     .eq("project_id", id)
-    .order("updated_at", { ascending: false });
+    .order("created_at", { ascending: false });
 
-  const latest = (interviews?.[0] as Interview | undefined) ?? null;
+  const respondentIds = (interviews ?? [])
+    .map((i) => i.respondent_id)
+    .filter((x): x is string => !!x);
+
+  const { data: respondents } = respondentIds.length
+    ? await supabase.from("interview_respondents").select("*").in("id", respondentIds)
+    : { data: [] as InterviewRespondent[] };
+
+  const respondentsById: Record<string, InterviewRespondent> = {};
+  for (const r of respondents ?? []) {
+    respondentsById[r.id] = r as InterviewRespondent;
+  }
 
   return (
     <div className="space-y-6">
-      <InterviewChat
-        projectId={id}
-        interviewId={latest?.id}
-        initialTranscript={latest?.transcript ?? []}
-        initialPersona={latest?.persona ?? ""}
-      />
-
-      {(interviews?.length ?? 0) > 1 && (
-        <div>
-          <h3 className="text-sm text-[color:var(--color-fg-muted)] mb-2">Past sessions</h3>
-          <ul className="space-y-1">
-            {(interviews ?? []).slice(1).map((iv) => (
-              <li
-                key={iv.id}
-                className="panel-soft px-4 py-2 text-xs text-[color:var(--color-fg-muted)] flex items-center justify-between"
-              >
-                <span>{iv.persona || "(no persona)"}</span>
-                <span>{new Date(iv.updated_at).toLocaleString()}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <ShareLinkManager projectId={id} />
+      <section>
+        <h2 className="text-lg font-medium tracking-tight mb-3">Collected interviews</h2>
+        <InterviewsList
+          projectId={id}
+          interviews={(interviews ?? []) as Interview[]}
+          respondentsById={respondentsById}
+        />
+      </section>
     </div>
   );
 }
