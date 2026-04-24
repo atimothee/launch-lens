@@ -45,6 +45,7 @@ export async function POST(
         await supabase.from("projects").update({ status: "running" }).eq("id", id);
 
         const collected: ScrapedItem[] = [];
+        const perSource: Record<string, { count: number; error?: string }> = {};
         const plan = {
           title: project.title,
           audience: project.target_audience ?? "",
@@ -70,14 +71,23 @@ export async function POST(
             );
           }
         })) {
+          if (ev.step === "source_done") {
+            perSource[ev.source] = { count: ev.count };
+          } else if (ev.step === "source_error") {
+            perSource[ev.source] = { count: 0, error: ev.error };
+          }
           send({ type: ev.step, source: ev.source, ...("count" in ev ? { count: ev.count } : {}), ...("error" in ev ? { error: ev.error } : {}) });
         }
 
         if (collected.length === 0) {
+          const summary = Object.entries(perSource)
+            .map(([src, s]) =>
+              s.error ? `${src}: error (${s.error})` : `${src}: ${s.count} items`,
+            )
+            .join(" · ");
           send({
             type: "error",
-            message:
-              "No research sources available. Check ANTHROPIC_API_KEY and network access for Reddit/web.",
+            message: `All sources returned zero items. ${summary || "(no source events)"}. Reddit often 403s from serverless IPs; try running locally, adding an APIFY_TOKEN, or checking REDDIT_USER_AGENT.`,
           });
           await supabase.from("projects").update({ status: "error" }).eq("id", id);
           controller.close();
