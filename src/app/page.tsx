@@ -77,33 +77,33 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <span className="chip">Demo</span>
             <span className="text-sm text-[color:var(--color-fg-muted)]">
-              Protein drinks for Gen X
+              Reusable water bottles for commuters
             </span>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <SampleInsight
               type="belief"
-              title="Protein is for bodybuilders"
-              body="Gen X consumers associate protein drinks with bodybuilders, creating a psychological barrier to everyday use."
-              quote="I'm 52 — I just want to keep my muscle. I'm not trying to look like the guy on the label."
+              title="Reusable bottles feel inconvenient"
+              body="Commuters assume reusable bottles are one more thing to carry, clean, and remember during an already rushed day."
+              quote="I like the idea, but if it leaks once in my bag, I'm done."
             />
             <SampleInsight
               type="goal"
-              title="Aging well, not getting ripped"
-              body='The underlying goal is vitality and resilience. "Stay strong enough to keep up", not "perform at the gym".'
-              quote="My dad had a fall at 68. I don't want that to be me."
+              title="Stay prepared without extra friction"
+              body='The underlying goal is feeling ready for the day. "Have water when I need it", not "optimize hydration".'
+              quote="I just want something I can throw in my work bag and forget about."
             />
             <SampleInsight
               type="context"
-              title="Breakfast replacement, not post-workout"
-              body="Usage skews to rushed mornings and skipped-lunch moments — protection, not performance."
-              quote="I grab one when I know I'm going to skip lunch. It's insurance."
+              title="Transit moments decide usage"
+              body="Usage is won or lost during packed trains, desk transitions, and after-work errands — portability matters more than ideals."
+              quote="If it does not fit in the side pocket, it is not coming with me."
             />
             <SampleInsight
               type="pattern"
-              title="Too artificial vs. actually healthy"
-              body='Convenience vs. clean-eating identity is the central tension across sources.'
-              quote="Read the label. It's basically candy with extra steps."
+              title="Sustainable vs. realistic"
+              body="The central tension is wanting a lower-waste habit without adding another chore to the morning routine."
+              quote="I want to use less plastic, but mornings are chaos."
             />
           </div>
         </div>

@@ -23,20 +23,20 @@ export default function NewProjectPage() {
           <Field
             label="Project title"
             name="title"
-            placeholder="e.g. Protein drinks for Gen X"
+            placeholder="e.g. Reusable water bottles for commuters"
             required
           />
           <Field
             label="Research question"
             name="research_question"
-            placeholder="e.g. How do we grow protein drink adoption among Gen X consumers?"
+            placeholder="e.g. What keeps commuters from carrying reusable water bottles every day?"
             required
             textarea
           />
           <Field
             label="Target audience"
             name="target_audience"
-            placeholder="e.g. Gen X consumers (ages 45–60), health-aware but not athletes"
+            placeholder="e.g. Urban commuters who bring bags to work or school"
             required
           />
           <Field

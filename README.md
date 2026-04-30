@@ -86,7 +86,7 @@ launch-lens/
 │   └── middleware.ts
 ├── supabase/
 │   ├── migrations/0001_init.sql          — tables + RLS
-│   └── seed.sql                          — demo "Protein drinks for Gen X"
+│   └── seed.sql                          — demo "Reusable water bottles for commuters"
 ├── next.config.ts
 ├── postcss.config.mjs
 ├── tsconfig.json
@@ -144,7 +144,7 @@ npm run dev
 ### 4. Demo seed (optional)
 
 After creating at least one user, grab the `auth.users.id` and seed the
-"Protein drinks for Gen X" demo project:
+"Reusable water bottles for commuters" demo project:
 
 ```bash
 psql "$SUPABASE_DB_URL" -v user_id="'<your-uuid>'" -f supabase/seed.sql

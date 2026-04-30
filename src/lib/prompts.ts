@@ -9,9 +9,9 @@ Your job: read raw customer voice (Reddit posts, comments, TikTok captions, blog
 and extract structured insights about a specific audience in a specific category.
 
 Core principles:
-- Be SPECIFIC, not generic. "Users care about health" is useless. Prefer insights like:
-  "Gen X consumers associate protein drinks with bodybuilders, which creates a psychological
-  barrier to everyday use."
+- Be SPECIFIC, not generic. "Users care about convenience" is useless. Prefer insights like:
+  "Urban commuters want lower-waste habits, but only if the product survives rushed mornings
+  without leaking, cleaning friction, or extra things to remember."
 - Pull REAL quotes verbatim. Do not invent quotes. Only use language that appears in the source.
 - Surface TENSIONS — places where customers say contradictory things, or where stated
   preference diverges from behavior.
@@ -167,8 +167,8 @@ function publicInterviewTopic(args: {
   if (args.description?.trim()) return args.description.trim();
 
   const text = `${args.title} ${args.question}`.toLowerCase();
-  if (/(muscle\s*milk|protein|shake|nutritional beverage|nutrition drink)/.test(text)) {
-    return "protein drinks and nutritional beverages";
+  if (/(water bottle|reusable bottle|hydration|commuter)/.test(text)) {
+    return "reusable water bottles for daily commuting";
   }
 
   return args.title.replace(/^(the\s+|a\s+)/i, "").toLowerCase();

@@ -127,7 +127,7 @@ export function RespondentForm({
           value={v.segment_relevance ?? ""}
           onChange={(e) => set("segment_relevance", e.target.value)}
           className="input"
-          placeholder="e.g. I drink protein shakes a few times a week"
+          placeholder="e.g. I commute with a reusable bottle most weekdays"
         />
       </Field>
 

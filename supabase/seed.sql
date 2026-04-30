@@ -1,52 +1,52 @@
 -- Optional demo seed. Run AFTER creating an auth user and replacing :user_id.
 -- Example: psql ... -v user_id="'<uuid>'" -f seed.sql
 --
--- This seeds the "Protein drinks for Gen X" demo project with hand-crafted
+-- This seeds the "Reusable water bottles for commuters" demo project with hand-crafted
 -- insights so the UI has something to show before running live research.
 
 insert into projects (id, user_id, title, description, target_audience, research_question, status)
 values (
   '00000000-0000-0000-0000-000000000001',
   :user_id,
-  'Protein drinks for Gen X',
-  'Category growth exploration for protein drinks with consumers aged 45–60.',
-  'Gen X consumers (ages 45–60), moderately health-conscious, non-athletes',
-  'How do we grow protein drink adoption among Gen X consumers?',
+  'Reusable water bottles for commuters',
+  'Category exploration for reusable water bottles with everyday urban commuters.',
+  'Urban commuters who bring bags to work or school',
+  'What keeps commuters from carrying reusable water bottles every day?',
   'ready'
 ) on conflict (id) do nothing;
 
 insert into insights (id, project_id, type, title, content, tension, confidence) values
 ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','belief',
- 'Protein is for bodybuilders',
- 'Many Gen X consumers associate protein drinks with bodybuilders and athletes, creating a psychological barrier to everyday use.',
- 'Want the benefit (muscle retention, satiety) but reject the identity (gym-bro).', 0.86),
+ 'Reusable bottles feel inconvenient',
+ 'Many commuters like the sustainability idea but assume reusable bottles will leak, take up bag space, or become another chore.',
+ 'Want the lower-waste habit but reject anything that adds friction to the morning.', 0.86),
 ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','goal',
- 'Aging well, not getting ripped',
- 'The underlying goal is vitality and resilience into their 50s/60s — staying strong enough to keep up, not performance maxing.',
+ 'Prepared without extra friction',
+ 'The underlying goal is having water available throughout the day without adding another item to manage, clean, or remember.',
  null, 0.82),
 ('10000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001','context',
- 'Breakfast replacement, not post-workout',
- 'Usage skews toward rushed mornings and skipped-lunch moments, not the gym. "Something in me before I forget to eat."',
+ 'Transit moments decide usage',
+ 'Usage is won or lost during packed trains, desk transitions, and after-work errands. Portability matters more than ideals.',
  null, 0.78),
 ('10000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001','pattern',
- 'Too artificial vs. actually healthy',
- 'Repeated tension across Reddit and blogs: protein drinks are seen as processed and sweet, in conflict with the "clean eating" identity many Gen X consumers now hold.',
- 'Convenience vs. purity.', 0.74)
+ 'Sustainable vs. realistic',
+ 'Repeated tension across public conversations: people want lower-waste habits but resist products that create cleaning, leaking, or carrying tradeoffs.',
+ 'Sustainability vs. morning chaos.', 0.74)
 on conflict (id) do nothing;
 
 insert into quotes (insight_id, text, source, source_url) values
 ('10000000-0000-0000-0000-000000000001',
- 'I am 52, I just want to keep my muscle. I am not trying to look like the guy on the label.',
- 'reddit', 'https://www.reddit.com/r/nutrition/'),
+ 'I like the idea, but if it leaks once in my bag, I am done.',
+ 'reddit', 'https://www.reddit.com/r/BuyItForLife/'),
 ('10000000-0000-0000-0000-000000000001',
- 'Every protein shake I see is marketed to 25-year-old men at the gym.',
- 'reddit', 'https://www.reddit.com/r/loseit/'),
+ 'I already carry a laptop, lunch, and an umbrella. The bottle has to earn its space.',
+ 'reddit', 'https://www.reddit.com/r/commuting/'),
 ('10000000-0000-0000-0000-000000000002',
- 'My dad had a fall at 68. I do not want that to be me. I just want to stay strong.',
- 'reddit', 'https://www.reddit.com/r/AskWomenOver40/'),
+ 'I just want something I can throw in my work bag and forget about.',
+ 'reddit', 'https://www.reddit.com/r/simpleliving/'),
 ('10000000-0000-0000-0000-000000000003',
- 'I grab one when I know I am going to skip lunch. It is insurance.',
- 'reddit', 'https://www.reddit.com/r/nutrition/'),
+ 'If it does not fit in the side pocket, it is not coming with me.',
+ 'reddit', 'https://www.reddit.com/r/onebag/'),
 ('10000000-0000-0000-0000-000000000004',
- 'Read the label. It is basically candy with extra steps.',
- 'reddit', 'https://www.reddit.com/r/EatCheapAndHealthy/');
+ 'I want to use less plastic, but mornings are chaos.',
+ 'reddit', 'https://www.reddit.com/r/ZeroWaste/');
