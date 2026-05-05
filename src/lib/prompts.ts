@@ -36,11 +36,11 @@ Research question: ${args.question}
 
 Sources (${args.sources.length}):
 ${args.sources
-  .map(
-    (s, i) =>
-      `[${i + 1}] (${s.kind}${s.url ? ` — ${s.url}` : ""})${s.title ? `\nTITLE: ${s.title}` : ""}\n${truncate(s.excerpt, 1800)}`,
-  )
-  .join("\n\n---\n\n")}
+    .map(
+      (s, i) =>
+        `[${i + 1}] (${s.kind}${s.url ? ` — ${s.url}` : ""})${s.title ? `\nTITLE: ${s.title}` : ""}\n${truncate(s.excerpt, 1800)}`,
+    )
+    .join("\n\n---\n\n")}
 
 Return JSON with this shape:
 
@@ -89,16 +89,16 @@ export const INTERVIEWER_SYSTEM = (args: {
   const publicTopic = publicInterviewTopic(args);
   const respondentLine = args.respondent
     ? [
-        args.respondent.name ? `name: ${args.respondent.name}` : null,
-        args.respondent.age_range ? `age: ${args.respondent.age_range}` : null,
-        args.respondent.location ? `location: ${args.respondent.location}` : null,
-        args.respondent.occupation ? `occupation: ${args.respondent.occupation}` : null,
-        args.respondent.usage_frequency
-          ? `category usage: ${args.respondent.usage_frequency}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(" · ")
+      args.respondent.name ? `name: ${args.respondent.name}` : null,
+      args.respondent.age_range ? `age: ${args.respondent.age_range}` : null,
+      args.respondent.location ? `location: ${args.respondent.location}` : null,
+      args.respondent.occupation ? `occupation: ${args.respondent.occupation}` : null,
+      args.respondent.usage_frequency
+        ? `category usage: ${args.respondent.usage_frequency}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · ")
     : "";
 
   return `You are a trained qualitative moderator conducting a customer interview on behalf of a marketing team. Your job is to help the team hear, in the customer's own voice, what they actually think — not what the brief hopes they think.
@@ -130,9 +130,8 @@ You conduct the interview in roughly this arc. Move forward when you have enough
   7. CONCEPT FEEDBACK — their honest reaction to a framing or idea when offered
   8. CLOSING — "is there anything else?" and warm wrap
 
-${
-  args.isPublic
-    ? `YOUR FIRST MESSAGE (send this verbatim, as your first turn, then WAIT for them to respond):
+${args.isPublic
+      ? `YOUR FIRST MESSAGE (send this verbatim, as your first turn, then WAIT for them to respond):
 "Hi${args.respondent?.name ? ` ${args.respondent.name}` : ""}, thanks so much for taking the time to meet with us today!
 
 As part of a class project, we're exploring how people make purchasing decisions — specifically around ${publicTopic}.
@@ -144,8 +143,8 @@ To get started, could you tell me a little about yourself and whether ${publicTo
 After that first message, move to stage 2 and follow the rules below.
 
 `
-    : ""
-}RULES
+      : ""
+    }RULES
 - One question per turn. Short and conversational. Never batch.
 - Keep the internal research objective hidden. Ask about category behavior, memories, habits, tradeoffs, and purchases without saying the study is trying to increase consumption or persuade them.
 - Early in the conversation, confirm fit naturally: age/life stage, whether they are in the target audience, and whether they have tried the relevant category before. If they have not tried it, continue with curiosity but treat them as lower-fit.
@@ -223,33 +222,32 @@ Research question: ${args.question}
 ${args.insights.map((i) => `- [${i.type}] ${i.title} — ${i.content}${i.tension ? ` (TENSION: ${i.tension})` : ""}`).join("\n") || "(none)"}
 
 === PRIMARY RESEARCH (interviews conducted by this team) ===
-${
-  args.interviews.length === 0
+${args.interviews.length === 0
     ? "(no completed interviews yet)"
     : args.interviews
-        .map((iv, idx) => {
-          const demo = iv.respondent
-            ? [
-                iv.respondent.age_range,
-                iv.respondent.gender,
-                iv.respondent.location,
-                iv.respondent.occupation,
-                iv.respondent.usage_frequency,
-              ]
-                .filter(Boolean)
-                .join(" · ")
-            : "";
-          const quotes = iv.quotes
-            .slice(0, 4)
-            .map((q) => `    "${q.replace(/\s+/g, " ").trim().slice(0, 280)}"`)
-            .join("\n");
-          return `Interview ${idx + 1}${demo ? ` (${demo})` : ""}:
+      .map((iv, idx) => {
+        const demo = iv.respondent
+          ? [
+            iv.respondent.age_range,
+            iv.respondent.gender,
+            iv.respondent.location,
+            iv.respondent.occupation,
+            iv.respondent.usage_frequency,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+          : "";
+        const quotes = iv.quotes
+          .slice(0, 4)
+          .map((q) => `    "${q.replace(/\s+/g, " ").trim().slice(0, 280)}"`)
+          .join("\n");
+        return `Interview ${idx + 1}${demo ? ` (${demo})` : ""}:
   Summary: ${iv.summary ?? "(no summary)"}
   Quotes from respondent:
 ${quotes || "    (no quotes)"}`;
-        })
-        .join("\n\n")
-}
+      })
+      .join("\n\n")
+  }
 
 Return JSON with this exact shape:
 
@@ -292,3 +290,146 @@ export const INTERVIEW_OPENER_USER = `Begin the interview now. Give your single 
 export const INTERVIEW_CLOSING_USER = `The respondent has chosen to wrap up. Send one final message: acknowledge them warmly (briefly), ask the single closing question — "is there anything else you'd like to share?" — and stop. No summary, no recap.`;
 
 export const INTERVIEW_THANKS_USER = `The respondent has finished. Send a short, warm thank-you message — 2 sentences max. No recap, no follow-up question.`;
+
+/**
+ * Demographic matching prompts for filtering scraped content by target audience
+ */
+
+export const DEMOGRAPHIC_MATCHER_SYSTEM = `You are a demographic analyst evaluating whether social media content comes from a specific target demographic.
+
+Your job: analyze content and author signals to determine demographic match confidence.
+
+Core principles:
+- Be CONSERVATIVE. Only assign high confidence (>0.7) when clear signals are present.
+- Look for EXPLICIT indicators: age mentions, life stage references, generational markers, occupation, location.
+- Consider IMPLICIT signals: language patterns, cultural references, technology usage, concerns.
+- NEVER guess. If signals are ambiguous or absent, score low (<0.5).
+- Provide SPECIFIC evidence for your score — quote the exact phrases that indicate demographic fit.
+
+Output STRICT JSON only — no prose, no code fences.`;
+
+export const DEMOGRAPHIC_MATCHER_USER = (args: {
+  target_demographic: string;
+  content: string;
+  author_profile?: {
+    username?: string;
+    age_indicators?: string[];
+    location_indicators?: string[];
+    occupation_indicators?: string[];
+    self_description?: string;
+  } | null;
+}) => {
+  const profileSection = args.author_profile
+    ? `
+Author profile (if available):
+${args.author_profile.username ? `Username: ${args.author_profile.username}` : ""}
+${args.author_profile.age_indicators?.length ? `Age indicators: ${args.author_profile.age_indicators.join(", ")}` : ""}
+${args.author_profile.location_indicators?.length ? `Location: ${args.author_profile.location_indicators.join(", ")}` : ""}
+${args.author_profile.occupation_indicators?.length ? `Occupation: ${args.author_profile.occupation_indicators.join(", ")}` : ""}
+${args.author_profile.self_description ? `Bio: ${args.author_profile.self_description}` : ""}
+`.trim()
+    : "(No author profile available)";
+
+  return `Target demographic: ${args.target_demographic}
+
+Content to analyze:
+${args.content.slice(0, 2000)}
+
+${profileSection}
+
+Does this content come from someone in the target demographic?
+
+Return JSON with this exact shape:
+{
+  "match_score": 0.0 to 1.0,
+  "confidence": "low" | "medium" | "high",
+  "signals": [
+    "specific phrase or indicator found in content",
+    "another explicit signal"
+  ],
+  "reasoning": "2-3 sentences explaining the score, citing specific evidence"
+}
+
+Scoring guide:
+- 0.0-0.3: No clear signals, likely not target demographic
+- 0.4-0.6: Some weak signals, uncertain match
+- 0.7-0.8: Multiple clear signals, likely match
+- 0.9-1.0: Explicit confirmation (e.g., "I'm a 62-year-old boomer")
+
+Be conservative. When in doubt, score lower.`;
+};
+
+/**
+ * Enhanced insight extraction with demographic awareness
+ */
+
+export const INSIGHT_EXTRACTOR_USER_DEMOGRAPHIC = (args: {
+  title: string;
+  audience: string;
+  question: string;
+  sources: Array<{
+    kind: string;
+    url?: string | null;
+    title?: string | null;
+    excerpt: string;
+    demographic_match_score?: number;
+    demographic_signals?: string[];
+  }>;
+}) => {
+  const sourcesWithDemo = args.sources.map((s, i) => {
+    const demoInfo =
+      s.demographic_match_score !== undefined && s.demographic_match_score > 0
+        ? `\n[DEMOGRAPHIC MATCH: ${Math.round(s.demographic_match_score * 100)}%${s.demographic_signals?.length
+          ? ` — Signals: ${s.demographic_signals.slice(0, 3).join(", ")}`
+          : ""
+        }]`
+        : "";
+    return `[${i + 1}] (${s.kind}${s.url ? ` — ${s.url}` : ""})${demoInfo}${s.title ? `\nTITLE: ${s.title}` : ""
+      }\n${truncate(s.excerpt, 1800)}`;
+  });
+
+  return `Project: ${args.title}
+Target audience: ${args.audience}
+Research question: ${args.question}
+
+Sources (${args.sources.length}):
+${sourcesWithDemo.join("\n\n---\n\n")}
+
+IMPORTANT INSTRUCTIONS:
+1. PRIORITIZE insights from sources with high demographic match scores (>70%).
+2. When multiple sources support an insight, prefer evidence from core demographic sources.
+3. For each insight, indicate which demographic segment it primarily represents.
+4. If an insight comes mainly from non-target demographics, note this in the tension field.
+
+Return JSON with this enhanced shape:
+
+{
+  "insights": [
+    {
+      "type": "belief" | "goal" | "context" | "pattern",
+      "title": "short noun phrase, max 10 words",
+      "content": "2-4 sentences, specific, in the voice of a strategist",
+      "tension": "optional — the contradiction this surfaces, one sentence",
+      "confidence": 0.0 to 1.0,
+      "demographic_relevance_score": 0.0 to 1.0,
+      "primary_demographic": "which demographic this insight represents (e.g., 'Baby Boomers', 'Urban Millennials')",
+      "evidence": [
+        {
+          "text": "verbatim from source",
+          "source_index": 1,
+          "evidence_type": "quote" | "statistic" | "observation",
+          "demographic_match_score": 0.85
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- 6 to 12 insights total, with a roughly even spread across the four types when supported.
+- Every insight needs at least one piece of evidence, pulled verbatim from the indicated source.
+- source_index refers to the [N] numbers above. Do not cite sources not in the list.
+- demographic_relevance_score should reflect the average demographic match of supporting evidence.
+- primary_demographic should be specific (not just "target audience") based on the evidence.
+- Confidence reflects evidence strength, not how much you like the insight.`;
+};

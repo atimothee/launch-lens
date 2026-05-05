@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runResearch, type ScrapedItem } from "@/lib/scrapers";
+import { enrichWithDemographics } from "@/lib/scrapers/demographic-filter";
 import { generateJSON } from "@/lib/ai/model-router";
-import { INSIGHT_EXTRACTOR_SYSTEM, INSIGHT_EXTRACTOR_USER } from "@/lib/prompts";
+import {
+  INSIGHT_EXTRACTOR_SYSTEM,
+  INSIGHT_EXTRACTOR_USER_DEMOGRAPHIC
+} from "@/lib/prompts";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -13,7 +17,14 @@ interface ExtractedInsight {
   content: string;
   tension?: string | null;
   confidence: number;
-  quotes: { text: string; source_index: number }[];
+  demographic_relevance_score?: number;
+  primary_demographic?: string;
+  evidence: Array<{
+    text: string;
+    source_index: number;
+    evidence_type?: "quote" | "statistic" | "observation";
+    demographic_match_score?: number;
+  }>;
 }
 
 export async function POST(
@@ -52,8 +63,9 @@ export async function POST(
           question: project.research_question ?? "",
         };
 
-        // Clear prior sources for a clean re-run.
+        // Clear prior sources and insights for a clean re-run.
         await supabase.from("research_sources").delete().eq("project_id", id);
+        await supabase.from("insights").delete().eq("project_id", id);
 
         for await (const ev of runResearch(plan, async (items) => {
           // Persist scraped items as we go.
@@ -67,6 +79,9 @@ export async function POST(
                 title: i.title,
                 excerpt: i.excerpt.slice(0, 5000),
                 raw: i.raw ?? null,
+                author_profile: i.author_profile ?? null,
+                demographic_match_score: i.demographic_match_score ?? 0,
+                demographic_signals: i.demographic_signals ?? null,
               })),
             );
           }
@@ -94,13 +109,22 @@ export async function POST(
           return;
         }
 
-        send({ type: "stage", stage: "extract", message: `synthesizing ${collected.length} items with OpenAI` });
+        // NEW: Enrich with demographic data
+        send({ type: "stage", stage: "demographic", message: `analyzing demographics for ${collected.length} items` });
+        const enriched = await enrichWithDemographics(
+          collected,
+          project.target_audience ?? "",
+          { batchSize: 5, minScore: 0.0 } // Keep all items but score them
+        );
+        send({ type: "stage", stage: "demographic", message: `demographic analysis complete` });
 
-        // Bounded context: top ~40 items.
-        const trimmed = collected.slice(0, 40);
+        send({ type: "stage", stage: "extract", message: `synthesizing ${enriched.length} items with OpenAI` });
+
+        // Bounded context: top ~40 items, prioritizing high demographic matches
+        const trimmed = enriched.slice(0, 40);
         const { value: extracted, provider } = await generateJSON<{ insights: ExtractedInsight[] }>({
           system: INSIGHT_EXTRACTOR_SYSTEM,
-          user: INSIGHT_EXTRACTOR_USER({
+          user: INSIGHT_EXTRACTOR_USER_DEMOGRAPHIC({
             title: project.title,
             audience: project.target_audience ?? "",
             question: project.research_question ?? "",
@@ -109,6 +133,8 @@ export async function POST(
               url: s.url,
               title: s.title,
               excerpt: s.excerpt,
+              demographic_match_score: s.demographic_match_score,
+              demographic_signals: s.demographic_signals ?? undefined,
             })),
           }),
           maxTokens: 6000,
@@ -116,9 +142,7 @@ export async function POST(
         });
         send({ type: "stage", stage: "extract", message: `extracted via ${provider}` });
 
-        // Wipe prior insights for a clean re-run and re-insert.
-        await supabase.from("insights").delete().eq("project_id", id);
-
+        // Insert insights with demographic data
         for (const ins of extracted.insights ?? []) {
           const { data: inserted, error: insErr } = await supabase
             .from("insights")
@@ -129,24 +153,29 @@ export async function POST(
               content: ins.content,
               tension: ins.tension ?? null,
               confidence: clamp01(ins.confidence),
+              demographic_relevance_score: clamp01(ins.demographic_relevance_score ?? 0),
+              primary_demographic: ins.primary_demographic ?? null,
             })
             .select("id")
             .single();
           if (insErr || !inserted) continue;
 
-          const quotesPayload = (ins.quotes ?? [])
-            .filter((q) => q.text && q.text.length > 0)
-            .map((q) => {
-              const src = trimmed[q.source_index - 1];
+          // Insert evidence (replaces quotes)
+          const evidencePayload = (ins.evidence ?? [])
+            .filter((e) => e.text && e.text.length > 0)
+            .map((e) => {
+              const src = trimmed[e.source_index - 1];
               return {
                 insight_id: inserted.id,
-                text: q.text,
-                source: src?.kind ?? null,
+                text: e.text,
                 source_url: src?.url ?? null,
+                evidence_type: e.evidence_type ?? "quote",
+                validation_status: "verified" as const, // Auto-verify AI-extracted evidence
+                demographic_match_score: e.demographic_match_score ?? src?.demographic_match_score ?? 0,
               };
             });
-          if (quotesPayload.length) {
-            await supabase.from("quotes").insert(quotesPayload);
+          if (evidencePayload.length) {
+            await supabase.from("evidence").insert(evidencePayload);
           }
         }
 

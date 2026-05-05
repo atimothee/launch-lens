@@ -1,6 +1,7 @@
 import { scrapeReddit } from "./reddit";
 import { scrapeTikTok } from "./tiktok";
 import { scrapeWeb } from "./web";
+import { scrapeInstagram, extractHashtags } from "./instagram";
 import type { ScrapedItem } from "./types";
 
 export type { ScrapedItem, ScrapedKind } from "./types";
@@ -31,10 +32,21 @@ export async function* runResearch(
   ];
   const primary = queries[0];
 
+  // Extract hashtags for Instagram
+  const hashtags = extractHashtags(plan.title);
+
   const jobs: { name: string; run: () => Promise<ScrapedItem[]> }[] = [
     { name: "reddit", run: () => scrapeReddit(primary, { limit: 10, commentsPerPost: 4 }) },
     { name: "web", run: () => scrapeWeb(primary, { limit: 4 }) },
     { name: "tiktok", run: () => scrapeTikTok(primary, { limit: 10 }) },
+    {
+      name: "instagram",
+      run: () => scrapeInstagram(primary, {
+        hashtags,
+        limit: 15,
+        includeComments: true
+      })
+    },
   ];
 
   // Yield a "started" event for each source.

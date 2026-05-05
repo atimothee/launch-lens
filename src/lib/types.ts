@@ -20,6 +20,8 @@ export interface Insight {
   content: string;
   tension: string | null;
   confidence: number;
+  demographic_relevance_score: number;
+  primary_demographic: string | null;
   created_at: string;
 }
 
@@ -32,15 +34,79 @@ export interface Quote {
   created_at: string;
 }
 
+// New: Author profile extracted from social media
+export interface AuthorProfile {
+  username?: string;
+  age_indicators?: string[];
+  location_indicators?: string[];
+  occupation_indicators?: string[];
+  self_description?: string;
+  [key: string]: unknown;
+}
+
 export interface ResearchSource {
   id: string;
   project_id: string;
-  kind: "reddit" | "web" | "tiktok";
+  kind: "reddit" | "web" | "tiktok" | "instagram";
   url: string | null;
   title: string | null;
   excerpt: string | null;
   raw: Record<string, unknown> | null;
+  author_profile: AuthorProfile | null;
+  demographic_match_score: number;
+  demographic_signals: string[] | null;
   created_at: string;
+}
+
+// New: Hierarchical evidence system (replaces flat quotes)
+export type EvidenceType = "quote" | "statistic" | "observation" | "screenshot";
+export type ValidationStatus = "pending" | "verified" | "disputed" | "excluded";
+
+export interface Evidence {
+  id: string;
+  insight_id: string;
+  parent_evidence_id: string | null;
+  text: string;
+  source_id: string | null;
+  source_url: string | null;
+  evidence_type: EvidenceType;
+  validation_status: ValidationStatus;
+  is_fact: boolean | null;
+  researcher_notes: string | null;
+  media_url: string | null;
+  media_type: string | null;
+  media_metadata: Record<string, unknown> | null;
+  demographic_match_score: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Evidence with nested children for tree display
+export interface EvidenceWithChildren extends Evidence {
+  children?: EvidenceWithChildren[];
+  source?: ResearchSource;
+}
+
+// Evidence with context for researcher UI
+export interface EvidenceWithContext extends Evidence {
+  project_id: string;
+  insight_type: InsightType;
+  insight_title: string;
+  source_kind: string | null;
+  author_profile: AuthorProfile | null;
+  demographic_signals: string[] | null;
+  hierarchy_depth: number;
+}
+
+// Insight with evidence summary
+export interface InsightWithEvidenceSummary extends Insight {
+  evidence_count: number;
+  verified_count: number;
+  pending_count: number;
+  disputed_count: number;
+  avg_evidence_demographic_score: number;
+  fact_count: number;
+  opinion_count: number;
 }
 
 export interface InterviewMessage {
