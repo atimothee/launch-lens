@@ -112,6 +112,31 @@ export default function Landing() {
           Built for PMs and brand strategists who want research to move as fast as they do.
         </p>
       </main>
+
+      <footer className="relative z-10 border-t border-[color:var(--color-border)]">
+        <div className="mx-auto max-w-5xl px-6 py-8 text-sm text-[color:var(--color-fg-muted)]">
+          Built by{" "}
+          {[
+            { name: "Timo", href: "https://www.linkedin.com/in/timothyasiimwe/" },
+            { name: "Nina", href: "https://www.linkedin.com/in/ninaychung" },
+            { name: "Shruti", href: "https://www.linkedin.com/in/shruti-shambhavi" },
+            { name: "Simran", href: "https://www.linkedin.com/in/simran-35a834a4" },
+            { name: "Aniket", href: "https://www.linkedin.com/in/aniket-agg" },
+          ].map(({ name, href }, i, arr) => (
+            <span key={name}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] transition-colors"
+              >
+                {name}
+              </a>
+              {i < arr.length - 2 ? ", " : i === arr.length - 2 ? ", and " : "."}
+            </span>
+          ))}
+        </div>
+      </footer>
     </div>
   );
 }
